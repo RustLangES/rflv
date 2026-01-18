@@ -10,4 +10,10 @@ pub enum FlvError {
 
     #[error("Invalid Version")]
     InvalidVersion,
+
+    #[error("Data offset")]
+    InvalidDataOffset,
+
+    #[error("Invalid Tag Type")]
+    InvalidTagType,
 }

@@ -22,12 +22,14 @@ pub struct FlvHeader {
     pub version: u8,
 
     pub flags: HeaderFlags,
+
+    pub data_offset: u32,
 }
 
 impl FlvHeader {
     pub fn decode<T: ReadBytesExt>(stream: &mut T) -> Result<Self, FlvError> {
         let signature = stream.read_u24::<BigEndian>()?;
-
+        
         if signature != FLV_HEADER_SIGNATURE {
             return Err(FlvError::InvalidSignature);
         }
@@ -40,10 +42,17 @@ impl FlvHeader {
 
         let flags = stream.read_u8()?;
 
+        let data_offset = stream.read_u32::<BigEndian>()?;
+
+        if data_offset != 9 {
+           return Err(FlvError::InvalidDataOffset); 
+        }
+
         Ok(Self {
             signature,
             version,
-            flags: HeaderFlags::from_bits_truncate(flags)
+            flags: HeaderFlags::from_bits_retain(flags),
+            data_offset
         })
     }
 
