@@ -1,6 +1,6 @@
 use byteorder::{BigEndian, ReadBytesExt, WriteBytesExt};
 
-use crate::{error::FlvError, ll::video::FlvVideoData};
+use crate::{error::FlvError, ll::{audio::FlvAudioTag, video::FlvVideoData}};
 
 pub struct FlvTagType;
 
@@ -74,7 +74,8 @@ impl FlvTag {
 #[derive(Debug)]
 pub enum FlvTagData {
     Video(FlvVideoData),
-    Audio(()),
+    Audio(FlvAudioTag),
+    Script(()),
 }
 
 
@@ -85,11 +86,14 @@ impl FlvTagData {
                 Ok(Self::Video(FlvVideoData::decode(stream, data_size)?))
             },
             FlvTagType::AUDIO => {
-                stream.read(&mut vec![0_u8; data_size as usize])?;
-                Ok(Self::Audio(()))
+                let tag = FlvAudioTag::encode(stream, data_size as usize)?;
+              
+                Ok(Self::Audio(tag))
             },
             FlvTagType::SCRIPT_DATA => {
-                Ok(Self::Audio(()))
+                println!("WARN: SCRIPT IS NOT IMPL");
+                stream.read(&mut vec![0_u8; data_size as usize])?;
+                Ok(Self::Script(()))
             },
             _ => {  
                 Err(FlvError::InvalidTagType) 

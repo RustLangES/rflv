@@ -6,7 +6,7 @@ use rflv::{error::FlvError, ll::{header::FlvHeader, tag::{FlvTag, FlvTagData, Fl
 fn main() {
 
 
-    let mut file = File::open("file.flv").unwrap();
+    let mut file = File::open("/home/juan/Downloads/1.flv").unwrap();
         
 
     let header = FlvHeader::decode(&mut file).unwrap();
@@ -16,6 +16,13 @@ fn main() {
 
    let tag = FlvTag::decode(&mut file).unwrap();
 
-   println!("{:?}", tag);
+println!("{:?}", tag);
+
+
+   let tag = FlvTag::decode(&mut file).unwrap();
+
+println!("{:?}", tag);
+
+
 
 }
