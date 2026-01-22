@@ -4,6 +4,48 @@ use crate::error::FlvError;
 
 const FLV_AUDIO_DATA_HEADER_SIZE: usize = 1;
 
+
+pub struct SoundFormat;
+
+impl SoundFormat {
+    pub const LINEAR_PCM_PLATFORM_ENDIAN: u8 = 0;
+    pub const ADPCM: u8 = 1;
+    pub const MP3: u8 = 2;
+    pub const LINEAR_PCM_LITTLE_ENDIAN: u8 = 3;
+    pub const NELLYMOSER_16_KHZ_MONO: u8 = 4;
+    pub const NELLYMOSER_8_KHZ_MONO: u8 = 5;
+    pub const NELLYMOSER: u8 = 6;
+    pub const G711_A_LAW: u8 = 7;
+    pub const G711_MU_LAW: u8 = 8;
+    pub const AAC: u8 = 10;
+    pub const SPEEX: u8 = 11;
+    pub const MP3_8_KHZ: u8 = 14;
+    pub const DEVICE_SPECIFIC: u8 = 15;
+}
+
+pub struct SoundRate;
+
+impl SoundRate {
+    pub const KHZ_5_5: u8 = 0;
+    pub const KHZ_11: u8 = 1;
+    pub const KHZ_22: u8 = 2;
+    pub const KHZ_44: u8 = 3;
+}
+
+pub struct SoundSize;
+
+impl SoundRate {
+    pub const SND_8_BIT: u8 = 0;
+    pub const SND_16_BIT: u8 = 1;
+}
+
+pub struct SoundData;
+
+impl SoundData {
+    pub const SND_MONO: u8 = 0;
+    pub const SND_STEREO: u8 = 1;
+}
+
 #[derive(Debug)]
 pub struct FlvAudioTag {
     pub sound_format: u8,
