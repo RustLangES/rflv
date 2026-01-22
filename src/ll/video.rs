@@ -115,8 +115,6 @@ impl AvcVideoPacket {
     pub fn decode<T: ReadBytesExt>(stream: &mut T, data_size: usize) -> Result<Self, FlvError> {
         let packet_type = stream.read_u8()?;
 
-        println!("asd:{:?}", packet_type);
-
         let composition_time = stream.read_i24::<BigEndian>()?;
 
         let size = if data_size > 5 {

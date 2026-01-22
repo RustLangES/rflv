@@ -80,13 +80,20 @@ pub enum FlvTagData {
 
 
 impl FlvTagData {
+    pub const fn size(&self) -> usize {
+        match self {
+            Self::Video(video) => 0,
+            Self::Audio(audio) => audio.size(),
+            Self::Script(_) => 0,
+        }
+    }
     pub fn decode<T: ReadBytesExt>(stream: &mut T, tag_type: u8, data_size: u32) -> Result<Self, FlvError> {
         match tag_type {
             FlvTagType::VIDEO => {
                 Ok(Self::Video(FlvVideoData::decode(stream, data_size)?))
             },
             FlvTagType::AUDIO => {
-                let tag = FlvAudioTag::encode(stream, data_size as usize)?;
+                let tag = FlvAudioTag::decode(stream, data_size as usize)?;
               
                 Ok(Self::Audio(tag))
             },
@@ -103,7 +110,8 @@ impl FlvTagData {
     pub fn encode<T: WriteBytesExt>(&self, stream: &mut T) -> Result<(), FlvError> {
         match self {
             Self::Video(data) => { data.encode(stream)? },
-            _ => {},
+            Self::Audio(data) => { data.encode(stream)? },
+            _ => { todo!() },
         }
 
         Ok(())
