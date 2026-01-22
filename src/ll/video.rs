@@ -36,6 +36,9 @@ pub struct FlvVideoData {
 }
 
 impl FlvVideoData {
+    pub const fn size(&self) -> usize {
+        self.video_data.size() + 2
+    }
     pub fn decode<T: ReadBytesExt>(stream: &mut T, data_size: u32) -> Result<Self, FlvError> {
         let frame_codec = stream.read_u8()?;
 
@@ -66,6 +69,14 @@ pub enum VideoData {
 }
 
 impl VideoData {
+    pub const fn size(&self) -> usize {
+        match self {
+            VideoData::Avc(avc) => {
+                avc.size()
+            },
+            VideoData::Other(other) => { other.len() },
+        }
+    } 
     pub fn decode<T: ReadBytesExt>(stream: &mut T, data_size: usize, codec: u8) -> Result<Self, FlvError> {
         match codec {
             CodecId::AVC => { Ok(VideoData::Avc(AvcVideoPacket::decode(stream, data_size)?)) },
@@ -112,6 +123,9 @@ pub struct AvcVideoPacket {
 }
 
 impl AvcVideoPacket {
+    pub const fn size(&self) -> usize {
+        self.data.len() + 5
+    }
     pub fn decode<T: ReadBytesExt>(stream: &mut T, data_size: usize) -> Result<Self, FlvError> {
         let packet_type = stream.read_u8()?;
 

@@ -82,7 +82,7 @@ pub enum FlvTagData {
 impl FlvTagData {
     pub const fn size(&self) -> usize {
         match self {
-            Self::Video(video) => 0,
+            Self::Video(video) => video.size(),
             Self::Audio(audio) => audio.size(),
             Self::Script(_) => 0,
         }
