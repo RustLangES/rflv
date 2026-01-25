@@ -9,7 +9,7 @@ use rflv::{
     file::FlvFile,
     ll::{
         audio::{AacAudioData, AudioData, FlvAudioTag},
-        header::{FlvHeader, HeaderFlags, FLV_DATA_OFFSET, FLV_HEADER_SIGNATURE, FLV_HEADER_VERSION},
+        header::{FlvHeader, HeaderFlags,FLV_HEADER_SIGNATURE, FLV_HEADER_VERSION},
         tag::{calc_previous_tag_size, FlvTag, FlvTagData, FlvTagType},
         video::{AvcPacketType, AvcVideoPacket, CodecId, FlvVideoData, FrameType, VideoData},
     },
@@ -17,48 +17,48 @@ use rflv::{
 
 fn main() {
     let mut file = File::create("test.flv").unwrap();
-    let sequence_header = FlvTagData::Video(FlvVideoData { frame_type: FrameType::KEYFRAME, codec: CodecId::AVC, video_data: VideoData::Avc(AvcVideoPacket {
-        packet_type: AvcPacketType::SEQUENCE_HEADER,
-        composition_time: 0,
-        data: SEQUENCE_HEADER.to_vec()
-    }) });
-    let sequence_header_size = sequence_header.size() as u32;
-    
-    let frame = FlvTagData::Video(FlvVideoData { frame_type: FrameType::KEYFRAME, codec: CodecId::AVC, video_data: VideoData::Avc(AvcVideoPacket {
-        packet_type: AvcPacketType::NALU,
-        composition_time: 0,
-        data: FRAME.to_vec()
-    }) });
-    let frame_size = frame.size() as u32;
+    let sequence_header = FlvVideoData {
+        frame_type: FrameType::KEYFRAME,
+        codec: CodecId::AVC,
+        video_data: VideoData::Avc(AvcVideoPacket::new_sequence_header(SEQUENCE_HEADER.to_vec()))
+    };
+
+    println!("{:?} {}", sequence_header.size(), SEQUENCE_HEADER.len());
+
+    let frame = FlvVideoData {
+        frame_type: FrameType::KEYFRAME,
+        codec: CodecId::AVC,
+        video_data: VideoData::Avc(AvcVideoPacket::new_nalu(FRAME.to_vec(), 0))
+    };
+
+    let eos = FlvVideoData {
+        frame_type: FrameType::KEYFRAME,
+        codec: CodecId::AVC,
+        video_data: VideoData::Avc(AvcVideoPacket::eos())
+    };
+
 
     let flv = FlvFile {
-        header: FlvHeader {
-            signature: FLV_HEADER_SIGNATURE,
-            version: FLV_HEADER_VERSION,
-            flags: HeaderFlags::VIDEO,
-            data_offset: FLV_DATA_OFFSET,
-        },
+        header: FlvHeader::new(HeaderFlags::VIDEO),
         tags: vec![
-            FlvTag {
-                tag_type: FlvTagType::VIDEO,
-                data_size: sequence_header_size,
-                timestamp: 0,
-                stream_id: 0,
-                data: sequence_header,
-                previous_tag_size: calc_previous_tag_size(sequence_header_size),
-            },
-            FlvTag {
-                tag_type: FlvTagType::VIDEO,
-                data_size: frame_size,
-                timestamp: 0,
-                stream_id: 0,
-                data: frame,
-                previous_tag_size: calc_previous_tag_size(frame_size),
-            }
+            FlvTag::new_video(sequence_header, 0),
+            FlvTag::new_video(frame, 33),    
+            FlvTag::new_video(eos, 66),
         ],
     };
 
     flv.encode(&mut file).unwrap();
+
+    let mut file = File::open("test.flv").unwrap();
+    let r = FlvFile::decode(&mut file).unwrap();
+
+    for tag in r.tags {
+        if let FlvTagData::Video(v) = &tag.data {
+            if let VideoData::Avc(avc) = &v.video_data {
+                println!("{:?}", &avc.data[0..5]);
+            }
+        }
+    } 
 }
 
 const SEQUENCE_HEADER: &[u8] = &[
