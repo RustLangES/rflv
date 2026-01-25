@@ -7,8 +7,10 @@ edition = "2024"
 members = ["example/"]
 
 [features]
-default = [ "low_level" ]
+default = [ "low_level", "file" ]
+
 low_level = []
+file = []
 
 [dependencies]
 bitflags = "2.10.0"

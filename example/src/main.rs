@@ -1,28 +1,12 @@
 use std::{fs::File, io::{Cursor, Read}};
 
 use byteorder::{BigEndian, ReadBytesExt};
-use rflv::{error::FlvError, ll::{audio::{AacAudioData, AudioData, FlvAudioTag}, header::FlvHeader, tag::{FlvTag, FlvTagData, FlvTagType}, video::{AvcPacketType, AvcVideoPacket, CodecId, FlvVideoData, FrameType, VideoData}}};
+use rflv::{error::FlvError, file::FlvFile, ll::{audio::{AacAudioData, AudioData, FlvAudioTag}, header::FlvHeader, tag::{FlvTag, FlvTagData, FlvTagType}, video::{AvcPacketType, AvcVideoPacket, CodecId, FlvVideoData, FrameType, VideoData}}};
 
 fn main() { 
-    let mut file = File::open("/home/juan/Downloads/1.flv").unwrap();
+    let mut file = File::open("file.flv").unwrap();
 
-
-    
-
-    let header = FlvHeader::decode(&mut file).unwrap();
-    println!("{:?}", header);
-
-   let a = file.read_u32::<BigEndian>().unwrap();
-
-   let tag = FlvTag::decode(&mut file).unwrap();
-
-println!("{:?}", tag);
-
-
-   let tag = FlvTag::decode(&mut file).unwrap();
-
-println!("{:?}", tag);
-
-
+    let flv_file = FlvFile::decode(&mut file).unwrap();
+    println!("{:#?}", flv_file);
 
 }

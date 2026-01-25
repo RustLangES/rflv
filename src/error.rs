@@ -16,4 +16,7 @@ pub enum FlvError {
 
     #[error("Invalid Tag Type")]
     InvalidTagType,
+
+    #[error("Invalid File")]
+    InvalidFile,
 }
