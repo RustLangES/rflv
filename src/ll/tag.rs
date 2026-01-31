@@ -1,6 +1,6 @@
 use byteorder::{BigEndian, ReadBytesExt, WriteBytesExt};
 
-use crate::{error::FlvError, ll::{audio::FlvAudioTag, video::FlvVideoData}};
+use crate::{error::FlvError, ll::{audio::{AudioData, FlvAudioTag}, video::{FlvVideoData, VideoData}}};
 
 pub struct FlvTagType;
 
@@ -30,8 +30,38 @@ pub struct FlvTag {
 }
 
 impl FlvTag {
+    pub fn new_audio(audio: FlvAudioTag, timestamp: u32) -> Self {
+        let tag_data = FlvTagData::Audio(audio);
+        let size = tag_data.size() as u32;
+
+        Self {
+            tag_type: FlvTagType::AUDIO,
+            data_size: size,
+            timestamp,
+            stream_id: 0,
+            data: tag_data,
+            previous_tag_size: calc_previous_tag_size(size)
+        }
+        
+    }
+
+    pub fn new_video(video: FlvVideoData, timestamp: u32) -> Self {
+        let tag_data = FlvTagData::Video(video);
+        let size = tag_data.size() as u32;
+
+        Self {
+            tag_type: FlvTagType::VIDEO,
+            data_size: size,
+            timestamp,
+            stream_id: 0,
+            data: tag_data,
+            previous_tag_size: calc_previous_tag_size(size),
+        }
+    }
+    
     pub fn decode<T: ReadBytesExt>(stream: &mut T) -> Result<Self, FlvError> {
         let tag_type = stream.read_u8()?;
+        println!("TAG_TYPE: {:?}", tag_type);
  
 
         let data_size = stream.read_u24::<BigEndian>()?;
@@ -42,6 +72,7 @@ impl FlvTag {
         let data = FlvTagData::decode(stream, tag_type, data_size)?;
         
         let previous_tag_size = stream.read_u32::<BigEndian>()?;
+
 
         Ok(Self {
             tag_type,
@@ -98,6 +129,45 @@ impl FlvTagData {
                 Ok(Self::Audio(tag))
             },
             FlvTagType::SCRIPT_DATA => {
+                // TYPE: STRING
+                let ty = stream.read_u8()?;
+                println!("{:?}", ty);
+
+                let a = stream.read_u16::<BigEndian>()?;
+                println!("{:?}", a);
+                let mut s = vec![0_u8; a as usize];
+                stream.read(&mut s).unwrap();
+
+                let s = String::from_utf8(s).unwrap();
+                println!("{:?}", s);
+
+                // TYPE: ECMA
+                let ty = stream.read_u8()?;
+                println!("ty: {:?}", ty);
+
+                let ecma_len = stream.read_u32::<BigEndian>()?;
+                println!("ecma len: {}", ecma_len);
+                
+
+                // key
+
+                let a = stream.read_u16::<BigEndian>()?;
+                println!("{:?}", a);
+                let mut s = vec![0_u8; a as usize];
+                stream.read(&mut s).unwrap();
+
+                let s = String::from_utf8(s).unwrap();
+                println!("{:?}", s);
+
+                let ty = stream.read_u8()?;
+                println!("{}", ty);
+
+                let number = stream.read_f64::<BigEndian>()?;
+                println!("{}", number);
+
+
+                      
+
                 println!("WARN: SCRIPT IS NOT IMPL");
                 stream.read(&mut vec![0_u8; data_size as usize])?;
                 Ok(Self::Script(()))
@@ -116,4 +186,10 @@ impl FlvTagData {
 
         Ok(())
     }
+}
+
+/// SIZE MUST BE WITHOUT THE HEADER SIZE
+#[inline]
+pub fn calc_previous_tag_size(size: u32) -> u32 {
+    size + 11
 }

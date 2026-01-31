@@ -142,8 +142,7 @@ impl AacAudioData {
     } 
     pub fn encode<T: ReadBytesExt>(stream: &mut T, data_size: usize) -> Result<AacAudioData, FlvError> {
         let packet_type = stream.read_u8()?;
-        //let data_size = data_size;
-
+        let data_size = data_size - 1;
 
         let mut data = vec![0_u8; data_size];
 

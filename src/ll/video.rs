@@ -37,7 +37,7 @@ pub struct FlvVideoData {
 
 impl FlvVideoData {
     pub const fn size(&self) -> usize {
-        self.video_data.size() + 2
+        self.video_data.size()
     }
     pub fn decode<T: ReadBytesExt>(stream: &mut T, data_size: u32) -> Result<Self, FlvError> {
         let frame_codec = stream.read_u8()?;
@@ -123,6 +123,27 @@ pub struct AvcVideoPacket {
 }
 
 impl AvcVideoPacket {
+    pub fn new_sequence_header(data: Vec<u8>) -> Self {
+        Self {
+            packet_type: AvcPacketType::SEQUENCE_HEADER,
+            composition_time: 0,
+            data
+        }
+    }
+    pub fn new_nalu(data: Vec<u8>, composition_time: i32) -> Self {
+        Self {
+            packet_type: AvcPacketType::NALU,
+            composition_time,
+            data
+        }
+    }
+    pub fn eos() -> Self {
+        Self {
+            packet_type: AvcPacketType::EOS,
+            composition_time: 0,
+            data: Vec::new(),
+        }
+    }
     pub const fn size(&self) -> usize {
         self.data.len() + 5
     }

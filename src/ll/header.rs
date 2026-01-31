@@ -4,6 +4,7 @@ use crate::error::FlvError;
 
 pub const FLV_HEADER_SIGNATURE: u32 = 0x464c56;
 pub const FLV_HEADER_VERSION: u8 = 0x1;
+pub const FLV_HEADER_DATA_OFFSET: u32 = 9;
 
 bitflags::bitflags! {
     #[derive(PartialEq, Eq, Debug, Clone, Copy)]
@@ -27,6 +28,15 @@ pub struct FlvHeader {
 }
 
 impl FlvHeader {
+    pub fn new(flags: HeaderFlags) -> Self {
+        Self {
+            signature: FLV_HEADER_SIGNATURE,
+            version: FLV_HEADER_VERSION,
+            flags,
+            data_offset: FLV_HEADER_DATA_OFFSET
+
+        }
+    }
     pub fn decode<T: ReadBytesExt>(stream: &mut T) -> Result<Self, FlvError> {
         let signature = stream.read_u24::<BigEndian>()?;
         
@@ -43,15 +53,15 @@ impl FlvHeader {
         let flags = stream.read_u8()?;
 
         let data_offset = stream.read_u32::<BigEndian>()?;
-
-        if data_offset != 9 {
+        
+        if data_offset < FLV_HEADER_DATA_OFFSET {
            return Err(FlvError::InvalidDataOffset); 
         }
 
         Ok(Self {
             signature,
             version,
-            flags: HeaderFlags::from_bits_retain(flags),
+            flags: HeaderFlags::from_bits_truncate(flags),
             data_offset
         })
     }
@@ -60,6 +70,7 @@ impl FlvHeader {
         stream.write_u24::<BigEndian>(self.signature)?;
         stream.write_u8(self.version)?;
         stream.write_u8(self.flags.bits())?;
+        stream.write_u32::<BigEndian>(self.data_offset)?;
 
         Ok(())
     }

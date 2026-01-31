@@ -1,3 +1,4 @@
+pub mod script;
 pub mod tag;
 pub mod audio;
 pub mod video;

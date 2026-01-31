@@ -1,6 +1,6 @@
 use std::io::ErrorKind;
 
-use byteorder::{BigEndian, ReadBytesExt};
+use byteorder::{BigEndian, ReadBytesExt, WriteBytesExt};
 
 use crate::{error::FlvError, ll::{header::FlvHeader, tag::FlvTag}};
 
@@ -13,6 +13,7 @@ pub struct FlvFile {
 impl FlvFile {
     pub fn decode<T: ReadBytesExt>(stream: &mut T) -> Result<Self, FlvError> {
         let header = FlvHeader::decode(stream)?;
+    
         let p = stream.read_u32::<BigEndian>()?;
 
         if p != 0 {
@@ -40,5 +41,13 @@ impl FlvFile {
             header,
             tags,
         })
+    }
+    pub fn encode<T: WriteBytesExt>(&self, stream: &mut T) -> Result<(), FlvError> {
+        self.header.encode(stream)?;
+        
+        stream.write_u32::<BigEndian>(0)?;
+
+        self.tags.iter().try_for_each(|tag| tag.encode(stream))?;
+        Ok(())
     }
 }
