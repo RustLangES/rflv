@@ -7,9 +7,8 @@ edition = "2024"
 members = ["example/"]
 
 [features]
-default = [ "low_level", "file" ]
-
-low_level = []
+default = [ "v1", "file" ]
+v1 = []
 file = []
 
 [dependencies]
