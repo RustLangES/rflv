@@ -82,9 +82,15 @@ impl VideoData {
             CodecId::AVC => { Ok(VideoData::Avc(AvcVideoPacket::decode(stream, data_size)?)) },
             _ => {
                 let mut v = vec![0_u8; data_size];
-                stream.read(&mut v)?;
-                
-                Ok(VideoData::Other(v))
+         
+                 stream.read(&mut v)?;
+      
+                 let mut a = vec![0_u8; 400];
+
+                 let n =stream.read(&mut a)?;
+
+                 println!("{:?}", &a[..n]);
+                 Ok(VideoData::Other(v))
             },
         }
     }

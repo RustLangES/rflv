@@ -3,14 +3,7 @@ use std::{str::Utf8Error, string::FromUtf8Error};
 use byteorder::{BigEndian, ReadBytesExt, WriteBytesExt};
 use thiserror::Error;
 
-#[derive(Debug)]
-pub struct FlvScriptTag {
-    pub name: Amf0String,
-    pub value: Amf0EcmaArray,
-} 
-
-
-// AMF0
+/// Amf0
 
 // NOTE FOR CODE READERS: `extract` is a function don't expect an ID
 
@@ -185,45 +178,20 @@ pub struct Amf0EcmaArray {
 }
 
 impl Amf0EcmaArray {
-    pub fn encode<T: WriteBytesExt>(&self, stream: &mut T) -> Result<(), Amf0Error> {
-        stream.write_u8(AMF0_ECMA_ARRAY)?;
-
-        stream.write_u32::<BigEndian>(self.len)?;
-
-        for prop in &self.props {
-            prop.encode(stream)?;
-        }
-
-        stream.write_u24::<BigEndian>(0x000009)?;
-
-        Ok(())
-    }
-    pub fn decode<T: ReadBytesExt>(stream: &mut T) -> Result<Self, Amf0Error> {
-        let ty = stream.read_u8()?;
+    pub fn decode<T: ReadBytesExt>(stream: &mut T) -> Result<(), Amf0Error> {
+        let ty = stream.read_u8();
 
         if ty != AMF0_ECMA_ARRAY {
             return Err(Amf0Error::InvalidId);
         }
 
-        let len = stream.read_u32::<BigEndian>()?;
+        let len = stream.read_u32();
 
         let mut props = Vec::new();
 
         for _ in 0..len {
             props.push(Amf0DataObjectProp::decode(stream)?);
         }
-
-        // read list terminator
-        let a = stream.read_u24::<BigEndian>()?;
-
-
-        println!("{:?}", a);
-
-        Ok(Self {
-            len,
-            props
-        })
-        
     }
 }
 

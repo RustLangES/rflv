@@ -51,7 +51,7 @@ fn main() {
     flv.encode(&mut file).unwrap();
 
     */
-    let mut file = File::open("/home/juan/Downloads/1.flv").unwrap();
+    let mut file = File::open("/home/juan/Downloads/3.flv").unwrap();
     let r = FlvFile::decode(&mut file).unwrap();
 }
 

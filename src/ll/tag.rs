@@ -1,6 +1,6 @@
 use byteorder::{BigEndian, ReadBytesExt, WriteBytesExt};
 
-use crate::{error::FlvError, ll::{audio::{AudioData, FlvAudioTag}, video::{FlvVideoData, VideoData}}};
+use crate::{error::FlvError, ll::{audio::{AudioData, FlvAudioTag}, script::{Amf0EcmaArray, Amf0String}, video::{FlvVideoData, VideoData}}};
 
 pub struct FlvTagType;
 
@@ -130,46 +130,20 @@ impl FlvTagData {
             },
             FlvTagType::SCRIPT_DATA => {
                 // TYPE: STRING
-                let ty = stream.read_u8()?;
-                println!("{:?}", ty);
-
-                let a = stream.read_u16::<BigEndian>()?;
-                println!("{:?}", a);
-                let mut s = vec![0_u8; a as usize];
-                stream.read(&mut s).unwrap();
-
-                let s = String::from_utf8(s).unwrap();
-                println!("{:?}", s);
+                let str = Amf0String::decode(stream).unwrap();
+                               
+                println!("{:?}", str);
 
                 // TYPE: ECMA
-                let ty = stream.read_u8()?;
-                println!("ty: {:?}", ty);
+                let ecma = Amf0EcmaArray::decode(stream).unwrap();
 
-                let ecma_len = stream.read_u32::<BigEndian>()?;
-                println!("ecma len: {}", ecma_len);
-                
-
-                // key
-
-                let a = stream.read_u16::<BigEndian>()?;
-                println!("{:?}", a);
-                let mut s = vec![0_u8; a as usize];
-                stream.read(&mut s).unwrap();
-
-                let s = String::from_utf8(s).unwrap();
-                println!("{:?}", s);
-
-                let ty = stream.read_u8()?;
-                println!("{}", ty);
-
-                let number = stream.read_f64::<BigEndian>()?;
-                println!("{}", number);
-
+                println!("{:?}", ecma);
+            
 
                       
 
                 println!("WARN: SCRIPT IS NOT IMPL");
-                stream.read(&mut vec![0_u8; data_size as usize])?;
+                //stream.read(&mut vec![0_u8; 0 as usize])?;
                 Ok(Self::Script(()))
             },
             _ => {  
