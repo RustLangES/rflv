@@ -1,6 +1,6 @@
 use byteorder::{BigEndian, ReadBytesExt, WriteBytesExt};
 
-use crate::{error::FlvError, v1::{audio::{AudioData, FlvAudioTag}, script::{Amf0EcmaArray, Amf0String}, video::{FlvVideoData, VideoData}}};
+use crate::{error::FlvError, v1::{audio::{AudioData, FlvAudioTag}, script::{Amf0EcmaArray, Amf0String, FlvScriptTag}, video::{FlvVideoData, VideoData}}};
 
 pub struct FlvTagType;
 
@@ -30,6 +30,20 @@ pub struct FlvTag {
 }
 
 impl FlvTag {
+    pub fn new_script(script: FlvScriptTag, timestamp: u32) -> Self {
+        let tag_data = FlvTagData::Script(script);
+        let size = tag_data.size() as u32;
+
+        Self {
+            tag_type: FlvTagType::SCRIPT_DATA,
+            data_size: size,
+            timestamp,
+            stream_id: 0,
+            data: tag_data,
+            previous_tag_size: calc_previous_tag_size(size)
+        }
+    }
+
     pub fn new_audio(audio: FlvAudioTag, timestamp: u32) -> Self {
         let tag_data = FlvTagData::Audio(audio);
         let size = tag_data.size() as u32;
@@ -61,8 +75,6 @@ impl FlvTag {
     
     pub fn decode<T: ReadBytesExt>(stream: &mut T) -> Result<Self, FlvError> {
         let tag_type = stream.read_u8()?;
-        println!("TAG_TYPE: {:?}", tag_type);
- 
 
         let data_size = stream.read_u24::<BigEndian>()?;
         let timestamp = stream.read_u32::<BigEndian>()?;
@@ -106,7 +118,7 @@ impl FlvTag {
 pub enum FlvTagData {
     Video(FlvVideoData),
     Audio(FlvAudioTag),
-    Script(()),
+    Script(FlvScriptTag),
 }
 
 
@@ -115,7 +127,7 @@ impl FlvTagData {
         match self {
             Self::Video(video) => video.size(),
             Self::Audio(audio) => audio.size(),
-            Self::Script(_) => 0,
+            Self::Script(script) => script.size(),
         }
     }
     pub fn decode<T: ReadBytesExt>(stream: &mut T, tag_type: u8, data_size: u32) -> Result<Self, FlvError> {
@@ -129,22 +141,9 @@ impl FlvTagData {
                 Ok(Self::Audio(tag))
             },
             FlvTagType::SCRIPT_DATA => {
-                // TYPE: STRING
-                let str = Amf0String::decode(stream).unwrap();
-                               
-                println!("{:?}", str);
+                let tag = FlvScriptTag::decode(stream, data_size as usize)?;
 
-                // TYPE: ECMA
-                let ecma = Amf0EcmaArray::decode(stream).unwrap();
-
-                println!("{:?}", ecma);
-            
-
-                      
-
-                println!("WARN: SCRIPT IS NOT IMPL");
-                //stream.read(&mut vec![0_u8; 0 as usize])?;
-                Ok(Self::Script(()))
+                Ok(Self::Script(tag))
             },
             _ => {  
                 Err(FlvError::InvalidTagType) 
@@ -155,7 +154,7 @@ impl FlvTagData {
         match self {
             Self::Video(data) => { data.encode(stream)? },
             Self::Audio(data) => { data.encode(stream)? },
-            _ => { todo!() },
+            Self::Script(data) => { data.encode(stream)? },
         }
 
         Ok(())

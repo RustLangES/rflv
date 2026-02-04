@@ -8,15 +8,12 @@ use rflv::{
     error::FlvError,
     file::FlvFile,
     v1::{
-        audio::{AacAudioData, AudioData, FlvAudioTag},
-        header::{FLV_HEADER_SIGNATURE, FLV_HEADER_VERSION, FlvHeader, HeaderFlags},
-        tag::{FlvTag, FlvTagData, FlvTagType, calc_previous_tag_size},
-        video::{AvcPacketType, AvcVideoPacket, CodecId, FlvVideoData, FrameType, VideoData},
+        audio::{AacAudioData, AudioData, FlvAudioTag}, header::{FlvHeader, HeaderFlags, FLV_HEADER_SIGNATURE, FLV_HEADER_VERSION}, script::{Amf0DataObjectProp, Amf0Key, Amf0String, Amf0Value, FlvScriptTag}, tag::{calc_previous_tag_size, FlvTag, FlvTagData, FlvTagType}, video::{AvcPacketType, AvcVideoPacket, CodecId, FlvVideoData, FrameType, VideoData}
     },
 };
 
 fn main() {
-    /*
+ 
     let mut file = File::create("test.flv").unwrap();
     let sequence_header = FlvVideoData {
         frame_type: FrameType::KEYFRAME,
@@ -38,21 +35,37 @@ fn main() {
         video_data: VideoData::Avc(AvcVideoPacket::eos())
     };
 
+    let script = FlvScriptTag::new("test".to_string(), vec![Amf0DataObjectProp {
+        name: Amf0Key::new("name".to_string()).unwrap(), // SAFE UNWRAP,
+        value: Amf0Value::String(Amf0String::new("juan".to_string()).unwrap())
+    }]).unwrap();
 
+    println!("{:?}", script);
+    println!("encoding");
     let flv = FlvFile {
         header: FlvHeader::new(HeaderFlags::VIDEO),
         tags: vec![
-            FlvTag::new_video(sequence_header, 0),
-            FlvTag::new_video(frame, 33),
-            FlvTag::new_video(eos, 66),
+            FlvTag::new_script(script, 0),
+
+            FlvTag::new_video(sequence_header, 10),
+            FlvTag::new_video(frame, 20),
+            FlvTag::new_video(eos, 30),
         ],
     };
 
     flv.encode(&mut file).unwrap();
 
-    */
-    let mut file = File::open("/home/juan/Downloads/3.flv").unwrap();
+    println!("reading");
+    let mut file = File::open("test.flv").unwrap();
     let r = FlvFile::decode(&mut file).unwrap();
+
+    for tag in r.tags {
+        if tag.tag_type == FlvTagType::SCRIPT_DATA {
+            println!("{:?}", tag);
+        }
+        println!("{:?}", tag.data);
+        println!("{:?}", tag.tag_type);
+    }
 }
 
 const SEQUENCE_HEADER: &[u8] = &[

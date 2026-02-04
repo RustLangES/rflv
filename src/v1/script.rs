@@ -6,9 +6,47 @@ use thiserror::Error;
 #[derive(Debug)]
 pub struct FlvScriptTag {
     pub name: Amf0String,
-    pub value: Amf0EcmaArray,
+    pub ecma: Amf0EcmaArray,
+
+    pub data_size: usize,
 } 
 
+
+impl FlvScriptTag {
+    pub fn new(name: String, props: Vec<Amf0DataObjectProp>) -> Result<Self, Amf0Error> {
+        let amf0_name = Amf0String::new(name)?;
+        let ecma = Amf0EcmaArray::new(props);
+
+        let data_size = amf0_name.size() + ecma.size();
+
+        Ok(Self {
+            name: amf0_name,
+            ecma,
+            data_size
+        })
+    }
+
+    pub const fn size(&self) -> usize {
+        self.data_size
+    }
+
+    pub fn encode<T: WriteBytesExt>(&self, stream: &mut T) -> Result<(), Amf0Error> {
+        self.name.encode(stream)?;
+        self.ecma.encode(stream)?;
+
+        Ok(())
+    }
+    pub fn decode<T: ReadBytesExt>(stream: &mut T, data_size: usize) -> Result<Self, Amf0Error> {
+        let name = Amf0String::decode(stream)?;
+        let ecma = Amf0EcmaArray::decode(stream)?;
+
+        Ok(Self {
+            name,
+            ecma,
+            data_size
+        })
+    }
+}
 
 // AMF0
 
@@ -28,6 +66,9 @@ pub struct Amf0Key {
 }
 
 impl Amf0Key {
+    pub const fn size(&self) -> usize {
+        2 + self.key.len()
+    } 
     pub fn new(key: String) -> Result<Self, Amf0Error> {
         if key.len() > (u16::MAX) as usize {
             return Err(Amf0Error::StringTooLong);
@@ -69,6 +110,10 @@ pub struct Amf0String {
 }
 
 impl Amf0String {
+    pub const fn size(&self) -> usize {
+        1 + 2 + self.content.len()
+    } 
+
     pub fn new(content: String) -> Result<Self, Amf0Error> {
         if content.len() > (u16::MAX) as usize {
             return Err(Amf0Error::StringTooLong);
@@ -119,6 +164,8 @@ impl Amf0String {
 pub struct Amf0Bool(bool);
 
 impl Amf0Bool {
+    pub const fn size(&self) -> usize { 2 }
+
     pub fn new(val: bool) -> Self { Self(val) }
 
     pub fn encode<T: WriteBytesExt>(&self, stream: &mut T) -> Result<(), Amf0Error> {
@@ -149,6 +196,8 @@ impl Amf0Bool {
 pub struct Amf0Number(f64);
 
 impl Amf0Number {
+    pub const fn size(&self) -> usize { 1 + 8 }
+
     pub fn new(val: f64) -> Self { 
         Self(val) 
     }
@@ -185,6 +234,22 @@ pub struct Amf0EcmaArray {
 }
 
 impl Amf0EcmaArray {
+    pub fn size(&self) -> usize { 
+        let base = 1 + 4 + 3;
+
+        let size = self.props.iter().fold(0, |mut acc, v| {
+            acc += v.size();
+            acc
+        });
+
+        size + base
+    }
+    pub fn new(props: Vec<Amf0DataObjectProp>) -> Self {
+        Self {
+            len: props.len() as u32,
+            props: props
+        }
+    }
     pub fn encode<T: WriteBytesExt>(&self, stream: &mut T) -> Result<(), Amf0Error> {
         stream.write_u8(AMF0_ECMA_ARRAY)?;
 
@@ -235,6 +300,10 @@ pub struct Amf0DataObjectProp {
 }
 
 impl Amf0DataObjectProp {
+    pub const fn size(&self) -> usize {
+        self.name.size() + self.value.size()
+    }
+
     pub fn encode<T: WriteBytesExt>(&self, stream: &mut T) -> Result<(), Amf0Error> {
         self.name.encode(stream)?;
         self.value.encode(stream)?;
@@ -261,6 +330,13 @@ pub enum Amf0Value {
 }
 
 impl Amf0Value {
+    pub const fn size(&self) -> usize { 
+        match self {
+            Amf0Value::String(amf) => amf.size(),
+            Amf0Value::Bool(amf) => amf.size(),
+            Amf0Value::Number(amf) => amf.size(),
+        }
+    }
     pub fn encode<T: WriteBytesExt>(&self, stream: &mut T) -> Result<(), Amf0Error> {
         match self {
             Amf0Value::String(amf) => amf.encode(stream),

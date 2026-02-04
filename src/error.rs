@@ -1,5 +1,7 @@
 use thiserror::Error;
 
+use crate::v1::script::Amf0Error;
+
 #[derive(Debug, Error)]
 pub enum FlvError {
     #[error("IO Error: {0}")]
@@ -19,4 +21,7 @@ pub enum FlvError {
 
     #[error("Invalid File")]
     InvalidFile,
+
+    #[error("Amf0 Parser Error: {0}")]
+    Amf0Error(#[from] Amf0Error),
 }
