@@ -4,6 +4,7 @@ use byteorder::{BigEndian, ReadBytesExt, WriteBytesExt};
 
 use crate::{error::FlvError, v1::{header::FlvHeader, tag::FlvTag}};
 
+/// FlvFile: Encoder, Decoder, receives a header and a series of tags and inserts them into an FLV file, as well as receiving an FLV file and generating the respective tags
 #[derive(Debug)]
 pub struct FlvFile {
     pub header: FlvHeader,
@@ -11,6 +12,7 @@ pub struct FlvFile {
 }
 
 impl FlvFile {
+    /// Decodes a FlvFile struct to a valid FLV file
     pub fn decode<T: ReadBytesExt>(stream: &mut T) -> Result<Self, FlvError> {
         let header = FlvHeader::decode(stream)?;
     
@@ -42,6 +44,7 @@ impl FlvFile {
             tags,
         })
     }
+    /// Encodes a valid FLV file to a FlvFile struct
     pub fn encode<T: WriteBytesExt>(&self, stream: &mut T) -> Result<(), FlvError> {
         self.header.encode(stream)?;
         

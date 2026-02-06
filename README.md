@@ -1,11 +1,18 @@
 # RFLV
 
-An Encoder & Decoder for flv written purely in Rust
+Rflv is an encoder-decoder for FLV written purely in Rust.
 
-# What Rflv does?
+Rflv can create/read FLV files, and can also directly generate FLV tags in cases where the user works directly with FLV tags (e.g., RTMP).
 
-Rflv is a low- and high-level abstraction for FLV. It offers some conveniences when working with H264 codec.
+# What RFLV does not do?
 
-# What Rflv doesn't?
+RFLV is simply an implementation of FLV for Rust; it is not an implementation of a decoder/encoder for any specific codec. The common workflow would be to have a separate codec and pass what the codec gives to RFLV.
 
-Rflv is not an encoder/decoder for h264 or any other codec. Although it has features for working with h264, it requires that it be previously encoded.
+# Little Example:
+```
+decode:
+let stream = ...; // must implement WriteBytesExt/ReadBytesExt of byteorder
+let tag = FlvTag::decode(&mut stream)?;
+
+
+```

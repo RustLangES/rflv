@@ -7,6 +7,7 @@ const FLV_AUDIO_DATA_HEADER_SIZE: usize = 1;
 
 pub struct SoundFormat;
 
+/// List of audio formats; the most commonly used ones today are AAC/MP3. 
 impl SoundFormat {
     pub const LINEAR_PCM_PLATFORM_ENDIAN: u8 = 0;
     pub const ADPCM: u8 = 1;
