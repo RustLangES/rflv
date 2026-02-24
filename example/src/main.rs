@@ -8,12 +8,16 @@ use rflv::{
     error::FlvError,
     file::FlvFile,
     v1::{
-        audio::{AacAudioData, AudioData, FlvAudioTag}, header::{FlvHeader, HeaderFlags, FLV_HEADER_SIGNATURE, FLV_HEADER_VERSION}, script::{Amf0DataObjectProp, Amf0Key, Amf0String, Amf0Value, FlvScriptTag}, tag::{calc_previous_tag_size, FlvTag, FlvTagData, FlvTagType}, video::{AvcPacketType, AvcVideoPacket, CodecId, FlvVideoData, FrameType, VideoData}
+        audio::{AacAudioData, AudioData, FlvAudioTag}, header::{FlvHeader, HeaderFlags, FLV_HEADER_SIGNATURE, FLV_HEADER_VERSION}, script::{Amf0DataObjectProp, Amf0Key, Amf0String, Amf0Value, FlvScriptTag}, tag::{calc_previous_tag_size, FlvTag, FlvTagData, FlvTagType}, video::{AvcPacketType, AvcVideoPacket, CodecId, FlvVideoData, FrameType, FrameTypeTest, VideoData}
     },
 };
 
 fn main() {
- 
+
+    let keyframe: u8 = FrameTypeTest::Keyframe.into();
+    println!("{:?}", keyframe);
+loop {}
+
     let mut file = File::create("test.flv").unwrap();
     let sequence_header = FlvVideoData {
         frame_type: FrameType::KEYFRAME,

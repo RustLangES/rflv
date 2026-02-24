@@ -1,35 +1,35 @@
 use byteorder::{BigEndian, ReadBytesExt, WriteBytesExt};
+use num_enum::{IntoPrimitive, TryFromPrimitive};
 
 use crate::error::FlvError;
 
-pub struct FrameType;
-
-impl FrameType {
-    pub const KEYFRAME: u8 = 0x1;
-    pub const INTER_FRAME: u8 = 0x2;
-    pub const DISPOSABLE_INTER_FRAME: u8 = 0x3;
-    pub const GENERATED_KEYFRAME: u8 = 0x4;
-    pub const VIDEO_INFO: u8 = 0x5;
-
+#[derive(Debug, Eq, PartialEq, IntoPrimitive, TryFromPrimitive, Clone, Copy)]
+#[repr(u8)]
+pub enum FrameType {
+    Keyframe = 0x1,
+    InterFrame = 0x2,
+    DisposableInterFrame = 0x3,
+    GeneratedKeyFrame = 0x4,
+    VideoInfo = 0x5,
 }
 
-pub struct CodecId;
-
-impl CodecId {
-    pub const JPEG: u8 = 0x1;
-    pub const SORENSON_H263: u8 = 0x2;
-    pub const SCREEN_VIDEO: u8 = 0x3;
-    pub const VP6: u8 = 0x4;
-    pub const VP6_ALPHA: u8 = 0x5;
-    pub const SCREEN_VIDEO_V2: u8 = 0x6;
-    pub const AVC: u8 = 0x7;
-
+#[derive(Debug, Eq, PartialEq, IntoPrimitive, TryFromPrimitive, Clone, Copy)]
+#[repr(u8)]
+pub enum CodecId {
+    Jpeg = 0x1,
+    SorensonH263 = 0x2,
+    ScreenVideo = 0x3,
+    Vp6 = 0x4,
+    Vp6Alpha = 0x5,
+    ScreenVideoV2 = 0x6,
+    Avc = 0x7,
 }
+
 
 #[derive(Debug)]
 pub struct FlvVideoData {
-    pub frame_type: u8,
-    pub codec: u8,
+    pub frame_type: FrameType,
+    pub codec: CodecId,
 
     /// HEADER_SIZE(5) + DATA_SIZE(N)
     pub video_data: VideoData
@@ -42,8 +42,8 @@ impl FlvVideoData {
     pub fn decode<T: ReadBytesExt>(stream: &mut T, data_size: u32) -> Result<Self, FlvError> {
         let frame_codec = stream.read_u8()?;
 
-        let frame = frame_codec >> 4 & 0x0F;
-        let codec = frame_codec & 0x0F;
+        let frame = FrameType::try_from_primitive(frame_codec >> 4 & 0x0F)?;
+        let codec = CodecId::try_from_primitive(frame_codec & 0x0F)?;
 
         let video_data = VideoData::decode(stream, data_size as usize, codec)?;
     
@@ -54,7 +54,9 @@ impl FlvVideoData {
         })
     }
     pub fn encode<T: WriteBytesExt>(&self, stream: &mut T) -> Result<(), FlvError> {
-        stream.write_u8(self.frame_type << 4 | self.codec)?;
+        let ft: u8 = self.frame_type.into();
+        let codec: u8 = self.codec.into();
+        stream.write_u8(ft << 4 | codec)?;
 
         self.video_data.encode(stream)?;
         
@@ -77,9 +79,9 @@ impl VideoData {
             VideoData::Other(other) => { other.len() },
         }
     } 
-    pub fn decode<T: ReadBytesExt>(stream: &mut T, data_size: usize, codec: u8) -> Result<Self, FlvError> {
+    pub fn decode<T: ReadBytesExt>(stream: &mut T, data_size: usize, codec: CodecId) -> Result<Self, FlvError> {
         match codec {
-            CodecId::AVC => { Ok(VideoData::Avc(AvcVideoPacket::decode(stream, data_size)?)) },
+            CodecId::Avc => { Ok(VideoData::Avc(AvcVideoPacket::decode(stream, data_size)?)) },
             _ => {
                 let mut v = vec![0_u8; data_size];
          
