@@ -2,7 +2,10 @@ use std::io::ErrorKind;
 
 use byteorder::{BigEndian, ReadBytesExt, WriteBytesExt};
 
-use crate::{error::FlvError, v1::{header::FlvHeader, tag::FlvTag}};
+use crate::{
+    error::FlvError,
+    v1::{header::FlvHeader, tag::FlvTag},
+};
 
 /// FlvFile: Encoder, Decoder, receives a header and a series of tags and inserts them into an FLV file, as well as receiving an FLV file and generating the respective tags
 #[derive(Debug)]
@@ -15,39 +18,33 @@ impl FlvFile {
     /// Decodes a FlvFile struct to a valid FLV file
     pub fn decode<T: ReadBytesExt>(stream: &mut T) -> Result<Self, FlvError> {
         let header = FlvHeader::decode(stream)?;
-    
+
         let p = stream.read_u32::<BigEndian>()?;
 
         if p != 0 {
-            return Err(FlvError::InvalidFile);    
+            return Err(FlvError::InvalidFile);
         }
 
         let mut tags = Vec::new();
 
         loop {
             let tag = FlvTag::decode(stream);
-        
+
             match tag {
                 Ok(t) => tags.push(t),
-                Err(e) => {
-                    match e {
-                        FlvError::IoError(e) if e.kind() == ErrorKind::UnexpectedEof => { break },
-                        e => return Err(e),
-                    }
-                }
+                Err(e) => match e {
+                    FlvError::IoError(e) if e.kind() == ErrorKind::UnexpectedEof => break,
+                    e => return Err(e),
+                },
             }
-
         }
- 
-        Ok(FlvFile {
-            header,
-            tags,
-        })
+
+        Ok(FlvFile { header, tags })
     }
     /// Encodes a valid FLV file to a FlvFile struct
     pub fn encode<T: WriteBytesExt>(&self, stream: &mut T) -> Result<(), FlvError> {
         self.header.encode(stream)?;
-        
+
         stream.write_u32::<BigEndian>(0)?;
 
         self.tags.iter().try_for_each(|tag| tag.encode(stream))?;

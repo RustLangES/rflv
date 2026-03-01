@@ -25,14 +25,13 @@ pub enum CodecId {
     Avc = 0x7,
 }
 
-
 #[derive(Debug)]
 pub struct FlvVideoData {
     pub frame_type: FrameType,
     pub codec: CodecId,
 
     /// HEADER_SIZE(5) + DATA_SIZE(N)
-    pub video_data: VideoData
+    pub video_data: VideoData,
 }
 
 impl FlvVideoData {
@@ -46,11 +45,11 @@ impl FlvVideoData {
         let codec = CodecId::try_from_primitive(frame_codec & 0x0F)?;
 
         let video_data = VideoData::decode(stream, data_size as usize, codec)?;
-    
+
         Ok(Self {
             frame_type: frame,
             codec,
-            video_data
+            video_data,
         })
     }
     pub fn encode<T: WriteBytesExt>(&self, stream: &mut T) -> Result<(), FlvError> {
@@ -59,9 +58,9 @@ impl FlvVideoData {
         stream.write_u8(ft << 4 | codec)?;
 
         self.video_data.encode(stream)?;
-        
+
         Ok(())
-    } 
+    }
 }
 
 #[derive(Debug)]
@@ -73,42 +72,43 @@ pub enum VideoData {
 impl VideoData {
     pub const fn size(&self) -> usize {
         match self {
-            VideoData::Avc(avc) => {
-                avc.size()
-            },
-            VideoData::Other(other) => { other.len() },
+            VideoData::Avc(avc) => avc.size(),
+            VideoData::Other(other) => other.len(),
         }
-    } 
-    pub fn decode<T: ReadBytesExt>(stream: &mut T, data_size: usize, codec: CodecId) -> Result<Self, FlvError> {
+    }
+    pub fn decode<T: ReadBytesExt>(
+        stream: &mut T,
+        data_size: usize,
+        codec: CodecId,
+    ) -> Result<Self, FlvError> {
         match codec {
-            CodecId::Avc => { Ok(VideoData::Avc(AvcVideoPacket::decode(stream, data_size)?)) },
+            CodecId::Avc => Ok(VideoData::Avc(AvcVideoPacket::decode(stream, data_size)?)),
             _ => {
                 let mut v = vec![0_u8; data_size];
-         
-                 stream.read(&mut v)?;
-      
-                 let mut a = vec![0_u8; 400];
 
-                 let n =stream.read(&mut a)?;
+                stream.read(&mut v)?;
 
-                 println!("{:?}", &a[..n]);
-                 Ok(VideoData::Other(v))
-            },
+                let mut a = vec![0_u8; 400];
+
+                let n = stream.read(&mut a)?;
+
+                println!("{:?}", &a[..n]);
+                Ok(VideoData::Other(v))
+            }
         }
     }
 
     pub fn encode<T: WriteBytesExt>(&self, stream: &mut T) -> Result<(), FlvError> {
         match self {
-            Self::Avc(v) => { v.encode(stream)? },
+            Self::Avc(v) => v.encode(stream)?,
             Self::Other(v) => {
                 stream.write(&v)?;
-            },
+            }
         }
 
         Ok(())
     }
 }
-
 
 pub struct AvcPacketType;
 
@@ -118,14 +118,12 @@ impl AvcPacketType {
     pub const EOS: u8 = 2;
 }
 
-
 #[derive(Debug)]
 pub struct AvcVideoPacket {
     pub packet_type: u8,
 
     /// I24
     pub composition_time: i32,
-
 
     pub data: Vec<u8>,
 }
@@ -135,14 +133,14 @@ impl AvcVideoPacket {
         Self {
             packet_type: AvcPacketType::SEQUENCE_HEADER,
             composition_time: 0,
-            data
+            data,
         }
     }
     pub fn new_nalu(data: Vec<u8>, composition_time: i32) -> Self {
         Self {
             packet_type: AvcPacketType::NALU,
             composition_time,
-            data
+            data,
         }
     }
     pub fn eos() -> Self {
@@ -173,7 +171,7 @@ impl AvcVideoPacket {
         Ok(Self {
             packet_type,
             composition_time,
-            data
+            data,
         })
     }
 

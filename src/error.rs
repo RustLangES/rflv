@@ -1,7 +1,9 @@
 use num_enum::TryFromPrimitiveError;
 use thiserror::Error;
 
-use crate::v1::{script::Amf0Error, video::{CodecId, FrameType}};
+use crate::v1::{
+    script::Amf0Error, tag::FlvTagType, video::{CodecId, FrameType}
+};
 
 #[derive(Debug, Error)]
 pub enum FlvError {
@@ -17,8 +19,7 @@ pub enum FlvError {
     #[error("Data offset")]
     InvalidDataOffset,
 
-    #[error("Invalid Tag Type")]
-    InvalidTagType,
+
 
     #[error("Invalid File")]
     InvalidFile,
@@ -31,4 +32,7 @@ pub enum FlvError {
 
     #[error("Invalid Frame Type: {0}")]
     InvalidFrameType(#[from] TryFromPrimitiveError<FrameType>),
+
+    #[error("Invalid Tag Type: {0}")]
+    InvalidTagType(#[from] TryFromPrimitiveError<FlvTagType>),
 }

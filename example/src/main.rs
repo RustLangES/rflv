@@ -8,21 +8,29 @@ use rflv::{
     error::FlvError,
     file::FlvFile,
     v1::{
-        audio::{AacAudioData, AudioData, FlvAudioTag}, header::{FlvHeader, HeaderFlags, FLV_HEADER_SIGNATURE, FLV_HEADER_VERSION}, script::{Amf0DataObjectProp, Amf0Key, Amf0String, Amf0Value, FlvScriptTag}, tag::{calc_previous_tag_size, FlvTag, FlvTagData, FlvTagType}, video::{AvcPacketType, AvcVideoPacket, CodecId, FlvVideoData, FrameType, FrameTypeTest, VideoData}
+        audio::{AacAudioData, AudioData, FlvAudioTag},
+        header::{FLV_HEADER_SIGNATURE, FLV_HEADER_VERSION, FlvHeader, HeaderFlags},
+        script::{Amf0DataObjectProp, Amf0Key, Amf0String, Amf0Value, FlvScriptTag},
+        tag::{FlvTag, FlvTagData, FlvTagType, calc_previous_tag_size},
+        video::{
+            AvcPacketType, AvcVideoPacket, CodecId, FlvVideoData, FrameType, FrameTypeTest,
+            VideoData,
+        },
     },
 };
 
 fn main() {
-
     let keyframe: u8 = FrameTypeTest::Keyframe.into();
     println!("{:?}", keyframe);
-loop {}
+    loop {}
 
     let mut file = File::create("test.flv").unwrap();
     let sequence_header = FlvVideoData {
         frame_type: FrameType::KEYFRAME,
         codec: CodecId::AVC,
-        video_data: VideoData::Avc(AvcVideoPacket::new_sequence_header(SEQUENCE_HEADER.to_vec()))
+        video_data: VideoData::Avc(AvcVideoPacket::new_sequence_header(
+            SEQUENCE_HEADER.to_vec(),
+        )),
     };
 
     println!("{:?} {}", sequence_header.size(), SEQUENCE_HEADER.len());
@@ -30,19 +38,23 @@ loop {}
     let frame = FlvVideoData {
         frame_type: FrameType::KEYFRAME,
         codec: CodecId::AVC,
-        video_data: VideoData::Avc(AvcVideoPacket::new_nalu(FRAME.to_vec(), 0))
+        video_data: VideoData::Avc(AvcVideoPacket::new_nalu(FRAME.to_vec(), 0)),
     };
 
     let eos = FlvVideoData {
         frame_type: FrameType::KEYFRAME,
         codec: CodecId::AVC,
-        video_data: VideoData::Avc(AvcVideoPacket::eos())
+        video_data: VideoData::Avc(AvcVideoPacket::eos()),
     };
 
-    let script = FlvScriptTag::new("test".to_string(), vec![Amf0DataObjectProp {
-        name: Amf0Key::new("name".to_string()).unwrap(), // SAFE UNWRAP,
-        value: Amf0Value::String(Amf0String::new("juan".to_string()).unwrap())
-    }]).unwrap();
+    let script = FlvScriptTag::new(
+        "test".to_string(),
+        vec![Amf0DataObjectProp {
+            name: Amf0Key::new("name".to_string()).unwrap(), // SAFE UNWRAP,
+            value: Amf0Value::String(Amf0String::new("juan".to_string()).unwrap()),
+        }],
+    )
+    .unwrap();
 
     println!("{:?}", script);
     println!("encoding");
@@ -50,7 +62,6 @@ loop {}
         header: FlvHeader::new(HeaderFlags::VIDEO),
         tags: vec![
             FlvTag::new_script(script, 0),
-
             FlvTag::new_video(sequence_header, 10),
             FlvTag::new_video(frame, 20),
             FlvTag::new_video(eos, 30),

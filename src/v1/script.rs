@@ -9,8 +9,7 @@ pub struct FlvScriptTag {
     pub ecma: Amf0EcmaArray,
 
     pub data_size: usize,
-} 
-
+}
 
 impl FlvScriptTag {
     pub fn new(name: String, props: Vec<Amf0DataObjectProp>) -> Result<Self, Amf0Error> {
@@ -22,7 +21,7 @@ impl FlvScriptTag {
         Ok(Self {
             name: amf0_name,
             ecma,
-            data_size
+            data_size,
         })
     }
 
@@ -43,21 +42,19 @@ impl FlvScriptTag {
         Ok(Self {
             name,
             ecma,
-            data_size
+            data_size,
         })
     }
 }
 
 // AMF0
 
-// NOTE FOR CODE READERS: `extract` is a function don't expect an ID
+// NOTE FOR CODE READERS: `extract` is a function that don't expect an ID
 
 const AMF0_STRING: u8 = 2;
 const AMF0_NUMBER: u8 = 0;
 const AMF0_BOOL: u8 = 1;
 const AMF0_ECMA_ARRAY: u8 = 8;
-
-
 
 #[derive(Debug)]
 pub struct Amf0Key {
@@ -68,7 +65,7 @@ pub struct Amf0Key {
 impl Amf0Key {
     pub const fn size(&self) -> usize {
         2 + self.key.len()
-    } 
+    }
     pub fn new(key: String) -> Result<Self, Amf0Error> {
         if key.len() > (u16::MAX) as usize {
             return Err(Amf0Error::StringTooLong);
@@ -76,15 +73,12 @@ impl Amf0Key {
 
         let size = key.len() as u16;
 
-        Ok(Self {
-            size,
-            key
-        })
+        Ok(Self { size, key })
     }
     pub fn encode<T: WriteBytesExt>(&self, stream: &mut T) -> Result<(), Amf0Error> {
         stream.write_u16::<BigEndian>(self.size)?;
         stream.write(self.key.as_bytes())?;
-    
+
         Ok(())
     }
     pub fn decode<T: ReadBytesExt>(stream: &mut T) -> Result<Self, Amf0Error> {
@@ -96,10 +90,7 @@ impl Amf0Key {
 
         let key = String::from_utf8(key)?;
 
-        Ok(Self {
-            size,
-            key
-        })
+        Ok(Self { size, key })
     }
 }
 
@@ -112,7 +103,7 @@ pub struct Amf0String {
 impl Amf0String {
     pub const fn size(&self) -> usize {
         1 + 2 + self.content.len()
-    } 
+    }
 
     pub fn new(content: String) -> Result<Self, Amf0Error> {
         if content.len() > (u16::MAX) as usize {
@@ -121,19 +112,16 @@ impl Amf0String {
 
         let size = content.len() as u16;
 
-        Ok(Self {
-            size,
-            content
-        })
+        Ok(Self { size, content })
     }
     pub fn encode<T: WriteBytesExt>(&self, stream: &mut T) -> Result<(), Amf0Error> {
         stream.write_u8(AMF0_STRING)?;
         stream.write_u16::<BigEndian>(self.size)?;
         stream.write(self.content.as_bytes())?;
-        
+
         Ok(())
     }
-   
+
     pub fn extract<T: ReadBytesExt>(stream: &mut T) -> Result<Self, Amf0Error> {
         let size = stream.read_u16::<BigEndian>()?;
 
@@ -143,30 +131,31 @@ impl Amf0String {
 
         let content = String::from_utf8(content)?;
 
-        Ok(Self {
-            content,
-            size
-        })
+        Ok(Self { content, size })
     }
 
     pub fn decode<T: ReadBytesExt>(stream: &mut T) -> Result<Self, Amf0Error> {
         let ty = stream.read_u8()?;
-        
+
         if ty != AMF0_STRING {
             return Err(Amf0Error::InvalidId);
         }
 
-        Self::extract(stream) 
+        Self::extract(stream)
     }
 }
 
-#[derive(Debug )]
+#[derive(Debug)]
 pub struct Amf0Bool(bool);
 
 impl Amf0Bool {
-    pub const fn size(&self) -> usize { 2 }
+    pub const fn size(&self) -> usize {
+        2
+    }
 
-    pub fn new(val: bool) -> Self { Self(val) }
+    pub fn new(val: bool) -> Self {
+        Self(val)
+    }
 
     pub fn encode<T: WriteBytesExt>(&self, stream: &mut T) -> Result<(), Amf0Error> {
         stream.write_u8(AMF0_BOOL)?;
@@ -179,7 +168,6 @@ impl Amf0Bool {
 
         Ok(Self(val))
     }
-
 
     pub fn decode<T: ReadBytesExt>(stream: &mut T) -> Result<Self, Amf0Error> {
         let ty = stream.read_u8()?;
@@ -196,10 +184,12 @@ impl Amf0Bool {
 pub struct Amf0Number(f64);
 
 impl Amf0Number {
-    pub const fn size(&self) -> usize { 1 + 8 }
+    pub const fn size(&self) -> usize {
+        1 + 8
+    }
 
-    pub fn new(val: f64) -> Self { 
-        Self(val) 
+    pub fn new(val: f64) -> Self {
+        Self(val)
     }
 
     pub fn encode<T: WriteBytesExt>(&self, stream: &mut T) -> Result<(), Amf0Error> {
@@ -224,17 +214,14 @@ impl Amf0Number {
     }
 }
 
-
 #[derive(Debug)]
 pub struct Amf0EcmaArray {
     pub len: u32,
-    pub props: Vec<Amf0DataObjectProp>
-
-    // LIST TERMINATOR U8[3] = 0, 0, 9
+    pub props: Vec<Amf0DataObjectProp>, // LIST TERMINATOR U8[3] = 0, 0, 9
 }
 
 impl Amf0EcmaArray {
-    pub fn size(&self) -> usize { 
+    pub fn size(&self) -> usize {
         let base = 1 + 4 + 3;
 
         let size = self.props.iter().fold(0, |mut acc, v| {
@@ -247,7 +234,7 @@ impl Amf0EcmaArray {
     pub fn new(props: Vec<Amf0DataObjectProp>) -> Self {
         Self {
             len: props.len() as u32,
-            props: props
+            props: props,
         }
     }
     pub fn encode<T: WriteBytesExt>(&self, stream: &mut T) -> Result<(), Amf0Error> {
@@ -281,22 +268,16 @@ impl Amf0EcmaArray {
         // read list terminator
         let a = stream.read_u24::<BigEndian>()?;
 
-
         println!("{:?}", a);
 
-        Ok(Self {
-            len,
-            props
-        })
-        
+        Ok(Self { len, props })
     }
 }
-
 
 #[derive(Debug)]
 pub struct Amf0DataObjectProp {
     pub name: Amf0Key,
-    pub value: Amf0Value
+    pub value: Amf0Value,
 }
 
 impl Amf0DataObjectProp {
@@ -309,18 +290,14 @@ impl Amf0DataObjectProp {
         self.value.encode(stream)?;
 
         Ok(())
-    } 
+    }
     pub fn decode<T: ReadBytesExt>(stream: &mut T) -> Result<Self, Amf0Error> {
         let name = Amf0Key::decode(stream)?;
         let value = Amf0Value::decode(stream)?;
 
-        Ok(Self {
-            name,
-            value
-        })
+        Ok(Self { name, value })
     }
 }
-
 
 #[derive(Debug)]
 pub enum Amf0Value {
@@ -330,7 +307,7 @@ pub enum Amf0Value {
 }
 
 impl Amf0Value {
-    pub const fn size(&self) -> usize { 
+    pub const fn size(&self) -> usize {
         match self {
             Amf0Value::String(amf) => amf.size(),
             Amf0Value::Bool(amf) => amf.size(),
@@ -351,7 +328,7 @@ impl Amf0Value {
             AMF0_STRING => Ok(Amf0Value::String(Amf0String::extract(stream)?)),
             AMF0_BOOL => Ok(Amf0Value::Bool(Amf0Bool::extract(stream)?)),
             AMF0_NUMBER => Ok(Amf0Value::Number(Amf0Number::extract(stream)?)),
-            _ => Err(Amf0Error::InvalidId)
+            _ => Err(Amf0Error::InvalidId),
         }
     }
 }
@@ -367,8 +344,6 @@ pub enum Amf0Error {
     #[error("Utf8Error: {0}")]
     Utf8Error(#[from] FromUtf8Error),
 
-
     #[error("IO Error: {0}")]
     IoError(#[from] std::io::Error),
 }
-

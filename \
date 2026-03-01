@@ -58,7 +58,7 @@ impl FlvTag {
         let size = tag_data.size() as u32;
 
         Self {
-            tag_type: FlvTagType::Audio,
+            tag_type: FlvTagType::AUDIO,
             data_size: size,
             timestamp,
             stream_id: 0,
@@ -72,7 +72,7 @@ impl FlvTag {
         let size = tag_data.size() as u32;
 
         Self {
-            tag_type: FlvTagType::Video,
+            tag_type: FlvTagType::VIDEO,
             data_size: size,
             timestamp,
             stream_id: 0,
@@ -88,7 +88,6 @@ impl FlvTag {
         let timestamp = stream.read_u32::<BigEndian>()?;
 
         let stream_id = stream.read_u24::<BigEndian>()?;
-        let tag_type =  FlvTagType::try_from_primitive(tag_type)?;
 
         let data = FlvTagData::decode(stream, tag_type, data_size)?;
 
@@ -104,7 +103,7 @@ impl FlvTag {
         })
     }
     pub fn encode<T: WriteBytesExt>(&self, stream: &mut T) -> Result<(), FlvError> {
-        stream.write_u8(self.tag_type.into())?;
+        stream.write_u8(self.tag_type)?;
 
         stream.write_u24::<BigEndian>(self.data_size)?;
 
@@ -137,21 +136,22 @@ impl FlvTagData {
     }
     pub fn decode<T: ReadBytesExt>(
         stream: &mut T,
-        tag_type: FlvTagType,
+        tag_type: u8,
         data_size: u32,
     ) -> Result<Self, FlvError> {
         match tag_type {
-            FlvTagType::Video => Ok(Self::Video(FlvVideoData::decode(stream, data_size)?)),
-            FlvTagType::Audio => {
+            FlvTagType::VIDEO => Ok(Self::Video(FlvVideoData::decode(stream, data_size)?)),
+            FlvTagType::AUDIO => {
                 let tag = FlvAudioTag::decode(stream, data_size as usize)?;
 
                 Ok(Self::Audio(tag))
             }
-            FlvTagType::ScriptData => {
+            FlvTagType::SCRIPT_DATA => {
                 let tag = FlvScriptTag::decode(stream, data_size as usize)?;
 
                 Ok(Self::Script(tag))
             }
+            _ => Err(FlvError::InvalidTagType),
         }
     }
     pub fn encode<T: WriteBytesExt>(&self, stream: &mut T) -> Result<(), FlvError> {

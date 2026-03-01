@@ -1,4 +1,4 @@
-use byteorder::{ReadBytesExt, WriteBytesExt, BigEndian};
+use byteorder::{BigEndian, ReadBytesExt, WriteBytesExt};
 
 use crate::error::FlvError;
 
@@ -33,19 +33,18 @@ impl FlvHeader {
             signature: FLV_HEADER_SIGNATURE,
             version: FLV_HEADER_VERSION,
             flags,
-            data_offset: FLV_HEADER_DATA_OFFSET
-
+            data_offset: FLV_HEADER_DATA_OFFSET,
         }
     }
     pub fn decode<T: ReadBytesExt>(stream: &mut T) -> Result<Self, FlvError> {
         let signature = stream.read_u24::<BigEndian>()?;
-        
+
         if signature != FLV_HEADER_SIGNATURE {
             return Err(FlvError::InvalidSignature);
         }
 
         let version = stream.read_u8()?;
-        
+
         if version != FLV_HEADER_VERSION {
             return Err(FlvError::InvalidVersion);
         }
@@ -53,16 +52,16 @@ impl FlvHeader {
         let flags = stream.read_u8()?;
 
         let data_offset = stream.read_u32::<BigEndian>()?;
-        
+
         if data_offset < FLV_HEADER_DATA_OFFSET {
-           return Err(FlvError::InvalidDataOffset); 
+            return Err(FlvError::InvalidDataOffset);
         }
 
         Ok(Self {
             signature,
             version,
             flags: HeaderFlags::from_bits_truncate(flags),
-            data_offset
+            data_offset,
         })
     }
 
