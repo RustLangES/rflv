@@ -6,54 +6,54 @@ use crate::error::FlvError;
 const FLV_AUDIO_DATA_HEADER_SIZE: usize = 1;
 
 
-pub struct SoundFormat;
 
-/// List of audio formats; the most commonly used ones today are AAC/MP3.
-impl SoundFormat {
-    pub const LINEAR_PCM_PLATFORM_ENDIAN: u8 = 0;
-    pub const ADPCM: u8 = 1;
-    pub const MP3: u8 = 2;
-    pub const LINEAR_PCM_LITTLE_ENDIAN: u8 = 3;
-    pub const NELLYMOSER_16_KHZ_MONO: u8 = 4;
-    pub const NELLYMOSER_8_KHZ_MONO: u8 = 5;
-    pub const NELLYMOSER: u8 = 6;
-    pub const G711_A_LAW: u8 = 7;
-    pub const G711_MU_LAW: u8 = 8;
-    pub const AAC: u8 = 10;
-    pub const SPEEX: u8 = 11;
-    pub const MP3_8_KHZ: u8 = 14;
-    pub const DEVICE_SPECIFIC: u8 = 15;
+#[derive(Debug, Eq, PartialEq, IntoPrimitive, TryFromPrimitive, Clone, Copy)]
+#[repr(u8)]
+pub enum SoundFormat {
+    LinearPcmPlatformEndian = 0,
+    Adpcm = 1,
+    Mp3 = 2,
+    LinearPcmLittleEndian = 3,
+    NellyMoser16KhzMono = 4,
+    NellyMoser8KhzMono = 5,
+    NellyMoser = 6,
+    G711ALaw = 7,
+    G711MuLaw = 8,
+    Aac = 10,
+    Speex = 11,
+    Mp3_8Khz = 14,
+    DeviceSpecific = 15,
 }
 
-pub struct SoundRate;
-
-impl SoundRate {
-    pub const KHZ_5_5: u8 = 0;
-    pub const KHZ_11: u8 = 1;
-    pub const KHZ_22: u8 = 2;
-    pub const KHZ_44: u8 = 3;
+#[derive(Debug, Eq, PartialEq, IntoPrimitive, TryFromPrimitive, Clone, Copy)]
+#[repr(u8)]
+pub enum SoundRate {
+    Khz5_5 = 0,
+    Khz11 = 1,
+    Khz22 = 2,
+    Khz44 = 3,
 }
 
-pub struct SoundSize;
-
-impl SoundRate {
-    pub const SND_8_BIT: u8 = 0;
-    pub const SND_16_BIT: u8 = 1;
+#[derive(Debug, Eq, PartialEq, IntoPrimitive, TryFromPrimitive, Clone, Copy)]
+#[repr(u8)]
+pub enum SoundSize {
+    Snd8Bit = 0,
+    Snd16Bit = 1,
 }
 
-pub struct SoundData;
-
-impl SoundData {
-    pub const SND_MONO: u8 = 0;
-    pub const SND_STEREO: u8 = 1;
+#[derive(Debug, Eq, PartialEq, IntoPrimitive, TryFromPrimitive, Clone, Copy)]
+#[repr(u8)]
+pub enum SoundType {
+    Mono = 0,
+    Stereo = 1,
 }
 
 #[derive(Debug)]
 pub struct FlvAudioTag {
-    pub sound_format: u8,
-    pub sound_rate: u8,
-    pub sound_size: u8,
-    pub sound_type: u8,
+    pub sound_format: SoundFormat,
+    pub sound_rate: SoundRate,
+    pub sound_size: SoundSize,
+    pub sound_type: SoundType,
 
     pub data: AudioData,
 }
@@ -74,16 +74,22 @@ impl FlvAudioTag {
         let data = AudioData::decode(stream, data_size, sound_format)?;
 
         Ok(Self {
-            sound_format,
-            sound_rate,
-            sound_size,
-            sound_type,
+            sound_format: SoundFormat::try_from(sound_format)?,
+            sound_rate: SoundRate::try_from(sound_rate)?,
+            sound_size: SoundSize::try_from(sound_size)?,
+            sound_type: SoundType::try_from(sound_type)?,
             data,
         })
     }
     pub fn encode<T: WriteBytesExt>(&self, stream: &mut T) -> Result<(), FlvError> {
+        let sound_format: u8 = self.sound_format.into();
+        let sound_rate: u8 = self.sound_rate.into();
+        let sound_size: u8 = self.sound_size.into();
+        let sound_type: u8 = self.sound_type.into();
+
+
         let sound_info =
-            self.sound_format << 4 | self.sound_rate << 2 | self.sound_size << 1 | self.sound_type;
+            sound_format << 4 | sound_rate << 2 | sound_size << 1 | sound_type;
 
         stream.write_u8(sound_info)?;
 

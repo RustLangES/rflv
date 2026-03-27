@@ -2,7 +2,7 @@ use num_enum::TryFromPrimitiveError;
 use thiserror::Error;
 
 use crate::v1::{
-    script::Amf0Error, tag::FlvTagType, video::{CodecId, FrameType}
+    audio::{SoundFormat, SoundRate, SoundSize, SoundType}, script::Amf0Error, tag::FlvTagType, video::{CodecId, FrameType}
 };
 
 #[derive(Debug, Error)]
@@ -35,4 +35,16 @@ pub enum FlvError {
 
     #[error("Invalid Tag Type: {0}")]
     InvalidTagType(#[from] TryFromPrimitiveError<FlvTagType>),
+
+    #[error("Invalid Sound Format: {0}")]
+    InvalidSoundFormat(#[from] TryFromPrimitiveError<SoundFormat>),
+
+    #[error("Invalid Sound Rate: {0}")]
+    InvalidSoundRate(#[from] TryFromPrimitiveError<SoundRate>),
+
+    #[error("Invalid Sound Size: {0}")]
+    InvalidSoundSize(#[from] TryFromPrimitiveError<SoundSize>),
+    
+    #[error("Invalid Sound Type: {0}")]
+    InvalidSoundType(#[from] TryFromPrimitiveError<SoundType>),
 }
